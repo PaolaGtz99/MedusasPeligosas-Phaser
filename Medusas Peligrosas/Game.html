@@ -1,0 +1,503 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8" />
+    <title>Medusas Peligrosas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="16x16" href="fav/favicon-16x16.png">
+	<style> body { margin: 0; background: #2B2E31 url(img/screen-bg.png) repeat; } </style>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <style>
+        body {
+            margin: 0 auto;
+            width: 60%;
+        }
+
+        @font-face 
+        { 
+            font-family: "KrabbyPatty"; 
+            src: 
+            url('/assets/fonts/KrabbyPatty.woff2') format('woff2'),
+            url('/assets/fonts/KrabbyPatty.woff') format('woff'),
+            url('/assets/fonts/KrabbyPatty.ttf') format('truetype'); 
+            font-weight: normal;
+            font-style: normal;
+            color: gold;
+        } 
+
+        .fontLoader 
+        {
+        position: absolute;
+        left: -1000px;
+        visibility: hidden;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="fontLoader" style="font-family: KrabbyPatty;">Cargando a la página la fuente de KrabbyPatty</div>
+    <script type="text/javascript">
+
+        var config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 600,
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 300 },
+                    debug: false
+                }
+            },
+            scene: {
+                preload: preload,
+                create: create,
+                update: update
+            },
+            pixelArt: true,
+            audio: {
+                disableWebAudio: true
+            }
+        };
+
+        var player;
+        var stars;
+        var bombs;
+        var platforms;
+        var cursors;
+        var score = 0;
+        var lifes = 3;
+        var gameOver = false;
+        var scoreText;
+        var lvl = 1;
+        var kangre;
+        var flag = 0;
+        var per = getParameterByName('pj');
+        var nomj = getParameterByName('nb');
+        var maxpts = 0;
+        var controlmute = false;
+        var controlpause = false;
+
+        var game = new Phaser.Game(config);
+
+        function preload ()
+        {
+            this.load.image('sky', 'assets/sky.png');   //lvl 1
+            this.load.image('sky2', 'assets/sky2.png'); //lvl 2
+            this.load.image('lose', 'assets/lose.png');
+            this.load.image('win', 'assets/win01.png');
+            this.load.image('victory', 'assets/win0.png');
+            this.load.image('ground', 'assets/platform.png');
+            this.load.image('ground2', 'assets/platform2.png');
+            this.load.image('ground2scale', 'assets/platform2scale.png');
+            this.load.image('star', 'assets/star.png'); //Medusas
+            this.load.image('kb', 'assets/kp.png'); //Kangreburger
+            this.load.image('gary', 'assets/gary.png'); //Lifes
+            this.load.image('bomb', 'assets/bomb.png'); //Oso marino
+            this.load.image('bomb2', 'assets/bomb2.png'); //Rinoceronte marino
+            this.load.image('pause', 'assets/pausab1.png');
+            this.load.image('pause', 'assets/pausab2.png');
+            this.load.image('play', 'assets/playb1.png');
+            this.load.image('on', 'assets/ON.png');
+            this.load.image('off', 'assets/OFF.png');
+            this.load.spritesheet('dude', 'assets/dude.png', { frameWidth: 32, frameHeight: 62 });
+            this.load.spritesheet('dude2', 'assets/dude2.png', { frameWidth: 32, frameHeight: 62 });
+            this.load.audio('theme', ['assets/song.mp3', 'assets/song.ogg']);
+            this.load.audio('sound2', ['assets/lose.mp3', 'assets/lose.ogg']);
+            this.load.audio('sound3', ['assets/capture.mp3', 'assets/capture.ogg']);
+            this.load.audio('sound4', ['assets/Victory.mp3', 'assets/Victory.ogg']);
+            this.load.audio('sound5', ['assets/eat.mp3', 'assets/eat.ogg']);
+            this.load.audio('sound6', [ 'audio/terror.ogg']);
+        }
+
+        function create()
+        {
+            if(!gameOver)
+            {   
+                var sound1 = this.sound.add('sound1');
+                var music = this.sound.add('theme');
+                music.play();
+
+                var pointer = this.input.activePointer;
+                
+                //  A simple background for our game
+                if(lvl == 1)
+                this.add.image(400, 300, 'sky');
+                else if(lvl == 2)
+                this.add.image(400, 300, 'sky2');
+
+                //  The platforms group contains the ground and the 2 ledges we can jump on
+                platforms = this.physics.add.staticGroup();
+
+                //  Here we create the ground.
+                //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
+                if(lvl == 1)
+                {
+                    platforms.create(400, 568, 'ground').setScale(2).refreshBody();
+
+                    //  Now let's create some ledges
+                    platforms.create(600, 400, 'ground');   //Middle
+                    platforms.create(50, 250, 'ground');    //Top left
+                    platforms.create(750, 220, 'ground');   //Top right
+                }
+                else if(lvl == 2)
+                {
+                    platforms.create(400, 568, 'ground2').setScale(2).refreshBody();
+
+                    //  Now let's create some ledges
+                    var platmov = platforms.create(430, 400, 'ground2scale');  //Middle
+                    platforms.create(220, 250, 'ground2scale');   //Top left
+                    platforms.create(600, 170, 'ground2scale');  //Top right
+                
+                }
+
+                //Iconos Wong
+                pause = this.add.image(28, 570, "pause");
+                pause.setInteractive();
+                start = this.add.image(88, 570, "play");
+                start.setInteractive();
+                mute = this.add.image(148, 570, "on");
+                mute.setInteractive();
+                mute2 = this.add.image(208, 570, "off");
+                mute2.setInteractive();
+            
+                pause.on(
+                "pointerdown",
+                () => {
+                    if (pointer.leftButtonDown()) {
+                            if (controlpause == false) {
+                            controlpause = true;
+                            this.physics.pause();
+                            music.pause();
+                            console.log(controlpause);
+                            }   
+                        }
+                    },
+                    this
+                );
+
+                start.on(
+                "pointerdown",
+                () => {
+                    if (pointer.leftButtonDown()) {
+                            if (controlpause == true) {
+                                controlpause = false;
+                                this.physics.resume();
+                                if (controlmute != true && gameOver!=true)
+                                    music.resume();
+                                console.log(controlpause);
+                            } 
+                        }
+                    },
+                    this
+                );
+
+                mute.on(
+                "pointerdown",
+                () => {
+                    if (pointer.leftButtonDown()) {
+                            if (controlmute == true) {
+                                music.pause();
+                                controlmute = false;
+                            }
+                        } 
+                    },
+                    this
+                );
+
+                mute2.on(
+                "pointerdown",
+                () => {
+                    if (pointer.leftButtonDown()) {
+                            if (controlmute == false) {
+                            music.resume();
+                            controlmute = true;
+                            }
+                        } 
+                    },
+                    this
+                );
+
+                // The player and its settings
+                if(per == "1")
+                    var pepe = 'dude';
+                else
+                    var pepe = 'dude2';
+
+                player = this.physics.add.sprite(100, 450, pepe);
+
+                //  Player physics properties. Give the little guy a slight bounce.
+                player.setBounce(0.2);
+                player.setCollideWorldBounds(true);
+
+                //  Our player animations, turning, walking left and walking right.
+                this.anims.create({
+                    key: 'left',
+                    frames: this.anims.generateFrameNumbers(pepe, { start: 0, end: 3 }),
+                    frameRate: 10,
+                    repeat: -1
+                });
+
+                this.anims.create({
+                    key: 'turn',
+                    frames: [ { key: pepe, frame: 4 } ],
+                    frameRate: 20
+                });
+
+                this.anims.create({
+                    key: 'right',
+                    frames: this.anims.generateFrameNumbers(pepe, { start: 5, end: 8 }),
+                    frameRate: 10,
+                    repeat: -1
+                });
+
+                //  Input Events
+                cursors = this.input.keyboard.createCursorKeys();
+
+                //  Some stars to collect, 12 in total, evenly spaced 70 pixels apart along the x axis
+                stars = this.physics.add.group({
+                    key: 'star',
+                    repeat: 11,
+                    setXY: { x: 12, y: 0, stepX: 70 }
+                });
+
+                stars.children.iterate(function (child) 
+                {
+                    //  Give each star a slightly different bounce
+                    child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
+                });
+
+                kangre = this.physics.add.group();
+                bombs = this.physics.add.group();
+                bombs2 = this.physics.add.group();
+
+                // Level number
+                lvlText = this.add.text(570, 555, 'Nivel '+lvl, {fontFamily: '"KrabbyPatty"', fontSize: '32px', fill: 'gold'});
+
+                //  The score
+                scoreText = this.add.text(300, 16, 'Puntos: 0', {fontFamily: '"KrabbyPatty"', fontSize: '32px', fill: 'gold'});
+                var nom = this.add.text(50, 16, nomj, {fontFamily: '"KrabbyPatty"', fontSize: '32px', fill: 'gold'});
+
+                //  Current lifes
+                lifeText = this.add.text(540, 16, 'Vidas: ', {fontFamily: '"KrabbyPatty"', fontSize: '32px', fill: 'gold'});
+                this.physics.add.staticGroup({key: 'gary', repeat: lifes-1, setXY: { x:650, y:34, stepX: 40 }})
+
+                //  Collide the player and the stars with the platforms
+                this.physics.add.collider(player, platforms);
+                this.physics.add.collider(stars, platforms);
+                this.physics.add.collider(bombs, platforms);
+                this.physics.add.collider(bombs2, platforms);
+                this.physics.add.collider(kangre, platforms);
+
+                //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
+                this.physics.add.overlap(player, stars, collectStar, null, this);
+                this.physics.add.overlap(player, kangre, collectK, null, this);
+
+                this.physics.add.collider(player, bombs, hitBomb, null, this);
+                this.physics.add.collider(player, bombs2, hitBomb2, null, this);
+            }
+        }
+
+        function update ()
+        {
+            if(gameOver)
+            {
+                //para records
+                var jugador = JSON.stringify({
+                    nombre: nomj,
+                    puntos: maxpts,
+                });
+                    
+                
+                var records = localStorage.getItem("records");
+                records = JSON.parse(records);
+                if(records==null) records= [];
+
+                records.push(jugador);
+                localStorage.setItem("records",JSON.stringify(records));    
+                
+                gameOver = false; //que te envie a menu principal o pantalla gameover
+                window.open("index.html", "_self");
+            }
+
+            if (cursors.left.isDown)
+            {
+                player.setVelocityX(-160);
+                player.anims.play('left', true);
+            }
+            else if (cursors.right.isDown)
+            {
+                player.setVelocityX(160);
+                player.anims.play('right', true);
+            }
+            else
+            {
+                player.setVelocityX(0);
+                player.anims.play('turn');
+            }
+
+            if (cursors.up.isDown && player.body.touching.down)
+            {
+                player.setVelocityY(-330);
+            }
+
+            if(score >= 400 && lvl == 1)
+            {
+                flag = 0;
+                maxpts += score;
+                score = 0;        
+                lifes = 4;
+                lvl++;
+
+                var sound6 = this.sound.add('sound6');
+                this.add.image(400, 300, 'win');
+                sound6.play();
+            }
+            else if (score >= 400 && lvl == 2)
+            {
+                flag = 0;
+                maxpts += score;
+                score = 0;        
+                lifes = 4;
+                lvl++;
+
+                var sound4 = this.sound.add('sound4');
+                sound4.play();
+                this.add.image(400, 300, 'victory');
+                gameOver = true;
+            }
+        }
+
+        function collectStar (player, star)
+        {
+            var sound3 = this.sound.add('sound3');
+            sound3.play();
+            star.disableBody(true, true);
+
+            //  Add and update the score
+            score += 10;
+            scoreText.setText('Puntos: ' + score);
+
+            if(Phaser.Math.Between(0, 100) > 85 && flag <3)
+            {
+                var kang = kangre.create(x, 16, 'kb');
+                kang.setBounce(1);
+                kang.setCollideWorldBounds(true);
+                kang.setVelocity(Phaser.Math.Between(-200, 200), 20);
+                kang.allowGravity = false;
+                flag++;
+            }
+
+            if (stars.countActive(true) === 0)
+            {
+                //  A new batch of stars to collect
+                stars.children.iterate(function (child) {
+                    child.enableBody(true, child.x, 0, true, true);
+                });
+
+                var x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
+
+                var bomb = bombs.create(x, 16, 'bomb');
+                bomb.setBounce(1);
+                bomb.setCollideWorldBounds(true);
+                bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
+                bomb.allowGravity = false;
+
+                if(lvl == 2)
+                {
+                    var bomb2 = bombs2.create(x, 16, 'bomb2');
+                    bomb2.setBounce(1);
+                    bomb2.setCollideWorldBounds(true);
+                    bomb2.setVelocity(Phaser.Math.Between(-200, 200), 20);
+                    bomb2.allowGravity = false;
+                }
+            }
+        }
+
+        //kangreburgers
+        function collectK (player, kg)
+        {
+            var sound5 = this.sound.add('sound5');
+            sound5.play();
+            kg.disableBody(true, true);
+
+            //Add and update the score
+            score += 50;
+            scoreText.setText('Puntos: ' + score);
+        }
+
+        function hitBomb (player, bomb)
+        {
+            lifes--;
+
+            if(maxpts < score && lvl == 1)
+                maxpts = score;
+            else if(maxpts-400 < score && lvl == 2)
+                maxpts = score;
+
+            if(lifes == 0)
+            {
+                var sound2 = this.sound.add('sound2');
+                sound2.play();
+                this.add.image(400, 300, 'lose');
+                gameOver = true;
+            }
+            else
+            {
+                score = 0;
+                player.destroy();
+                bomb.destroy();
+                this.create();
+            }
+        }
+
+        function hitBomb2 (player, bomb2)
+        {
+            lifes--;
+
+            if(maxpts < score && lvl == 1)
+                maxpts = score;
+            else if(maxpts-400 < score && lvl == 2)
+                maxpts = score;
+            
+            if(lifes == 0)
+            {
+                var sound2 = this.sound.add('sound2');
+                sound2.play();
+                this.add.image(400, 300, 'lose');
+                gameOver = true;
+            }
+            else
+            {
+                score = 0;
+                player.destroy();
+                bomb2.destroy();
+                this.create();
+            }
+        }
+
+        function sleep(milliseconds) 
+        {
+            var start = new Date().getTime();
+            for (var i = 0; i < 1e7; i++) 
+            {
+                if ((new Date().getTime() - start) > milliseconds)
+                    break;
+            }
+        }
+            
+        function getParameterByName(name) 
+        {
+            name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+            var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+            results = regex.exec(location.search);
+            return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+        }
+
+    </script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>

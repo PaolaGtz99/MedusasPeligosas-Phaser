@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title>Medusas Peligrosas</title>
+	<link rel="icon" type="image/png" sizes="16x16" href="fav/favicon-16x16.png">
+	<style> body { margin: 0; background: #2B2E31 url(img/screen-bg.png) repeat; } </style>
+
+	<style>
+		@font-face 
+        { 
+            font-family: "KrabbyPatty"; 
+            src: 
+            url('fonts/KrabbyPatty.woff2') format('woff2'),
+            url('fonts/KrabbyPatty.woff') format('woff'),
+            url('fonts/KrabbyPatty.ttf') format('truetype'); 
+            font-weight: normal;
+            font-style: normal;
+            color: gold;
+        } 
+
+        .fontLoader 
+        {
+        position: absolute;
+        left: -1000px;
+        visibility: hidden;
+        }
+	</style>
+	<script src="src/phaser-arcade-physics.2.2.2.min.js"></script>
+	<script src="src/Boot.js"></script>
+	<script src="src/Preloader.js"></script>
+	<script src="src/MainMenu.js"></script>
+	<script src="src/Howto.js"></script>
+	<script src="src/Game.js"></script>
+	<script src="src/befplay.js"></script>
+	<script src="src/records.js"></script>
+	<script src="src/salir.js"></script>
+
+	
+</head>
+<body>
+	<div class="fontLoader" style="font-family: KrabbyPatty;">Cargando a la página la fuente de KrabbyPatty</div>
+<script>
+(function() {
+	var game = new Phaser.Game(800,600, 'arcade', Phaser.CANVAS, 'game');
+	game.state.add('Boot', Ball.Boot);
+	game.state.add('Preloader', Ball.Preloader);
+	game.state.add('MainMenu', Ball.MainMenu);
+	game.state.add('Howto', Ball.Howto);
+	game.state.add('Game', Ball.Game);
+	game.state.add('befplay', Ball.befplay);
+	game.state.add('records', Ball.records);
+	game.state.add('salir', Ball.salir);
+	game.state.start('Boot');
+})();
+</script>
+</body>
+</html>
